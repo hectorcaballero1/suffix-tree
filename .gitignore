@@ -18,5 +18,10 @@ backend/data/corpus/*
 backend/data/benchmark/*
 !backend/data/benchmark/.gitkeep
 
-# Frontend lives in its own repo
-frontend/
+
+.idea/
+.DS_Store
+.pytest_cache/
+
+# Keep benchmark data (generated)
+backend/data/benchmark/*.txt

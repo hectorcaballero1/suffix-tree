@@ -163,6 +163,29 @@ Error: `benchmark_file_missing` si algun archivo no existe.
 
 ---
 
+## Frontend
+
+SPA con tres pestañas construida con **Vite + vanilla JS** (sin framework). El frontend es un repositorio independiente.
+
+| Pestaña | Funcionalidad |
+|---|---|
+| **Ctrl+F** | Subir PDF/TXT → cargar en suffix tree → buscar patrón → resalta ocurrencias + muestra ruta en el árbol |
+| **Plagio** | Subir corpus → construir árbol generalizado → detectar plagio → spans coloreados por fuente con porcentajes |
+| **Benchmark** | Ejecuta benchmark sobre 3 tamaños (100k, 500k, 1M) → tabla comparativa + gráfico de barras |
+
+Inicialización:
+
+```bash
+cd frontend
+pnpm install        # primera vez
+pnpm dev            # http://localhost:5173
+pnpm build          # produccion → dist/
+```
+
+El proxy de Vite redirige `/corpus`, `/document`, `/detect`, `/benchmark` y `/health` al backend.
+
+---
+
 ## Decisiones tecnicas
 
 **Algoritmo de Ukkonen:** el suffix tree se construye en O(n) tiempo y espacio usando el algoritmo de Ukkonen. La alternativa naive seria insertar cada sufijo uno a uno — O(n²). Ukkonen mantiene un "punto activo" y reglas de extension que permiten procesar cada caracter exactamente una vez.
@@ -185,10 +208,14 @@ Error: `benchmark_file_missing` si algun archivo no existe.
 # 1. Compilar el nucleo C++
 uv run python build.py
 
-# 2. Levantar el backend (no usar --reload, rompe el estado en memoria)
+# 2. Iniciar backend
 cd backend && uv run uvicorn main:app
 # http://localhost:8000
 
-# 3. Correr todos los tests (C++ + Python)
+# 3. Iniciar frontend (otra terminal)
+cd frontend && pnpm dev
+# http://localhost:5173
+
+# 4. Correr todos los tests (C++ + Python)
 uv run python test.py
 ```
