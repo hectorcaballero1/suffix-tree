@@ -1,16 +1,22 @@
-# Python-generated files
+# Python
 __pycache__/
 *.py[oc]
+.venv
 build/
 dist/
 wheels/
 *.egg-info
 
-# Virtual environments
-.venv
-
-# Compiled extension module
+# Compiled extension
 backend/*.so
 
-# Benchmark data (provided by user, not committed)
-backend/data/benchmark_*.txt
+# Data folders — track structure but not content
+backend/data/search_doc/*
+!backend/data/search_doc/.gitkeep
+backend/data/corpus/*
+!backend/data/corpus/.gitkeep
+backend/data/benchmark/*
+!backend/data/benchmark/.gitkeep
+
+# Frontend lives in its own repo
+frontend/
