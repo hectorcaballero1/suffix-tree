@@ -1,0 +1,29 @@
+[project]
+name = "suffix-tree"
+version = "0.1.0"
+description = "Plagiarism detector and indexed document search using Ukkonen suffix trees"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "cmake>=4.3.2",
+    "fastapi>=0.137.0",
+    "pymupdf>=1.27.2.3",
+    "python-multipart>=0.0.32",
+    "uvicorn[standard]>=0.49.0",
+]
+
+[dependency-groups]
+dev = [
+    "httpx>=0.28.1",
+    "pybind11>=3.0.4",
+    "pytest>=9.1.0",
+    "pytest-asyncio>=1.4.0",
+]
+
+[tool.uv]
+# Always use uv-managed Python so C headers (Python.h) are bundled — no apt needed.
+python-preference = "managed"
+
+[tool.pytest.ini_options]
+testpaths = ["tests/python"]
+asyncio_mode = "auto"
