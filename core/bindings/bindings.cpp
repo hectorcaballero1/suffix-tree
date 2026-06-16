@@ -21,11 +21,18 @@ PYBIND11_MODULE(suffix_tree_core, m) {
         .def_readonly("position", &Occurrence::position)
         .def_readonly("source",   &Occurrence::source);
 
+    py::class_<CorpusTree::MatchResult>(m, "MatchResult")
+        .def_readonly("pos",    &CorpusTree::MatchResult::pos)
+        .def_readonly("length", &CorpusTree::MatchResult::length)
+        .def_readonly("source", &CorpusTree::MatchResult::source);
+
     py::class_<CorpusTree>(m, "CorpusTree")
         .def(py::init<>())
-        .def("build",            &CorpusTree::build)
-        .def("contains",         &CorpusTree::contains)
-        .def("find_occurrences", &CorpusTree::find_occurrences);
+        .def("build",                &CorpusTree::build)
+        .def("contains",             &CorpusTree::contains)
+        .def("find_occurrences",     &CorpusTree::find_occurrences)
+        .def("matching_statistics",  &CorpusTree::matching_statistics,
+             py::arg("suspect_normalized"), py::arg("min_match_len") = 40);
 
     m.def("naive_search", &naive_search,
           py::arg("text"), py::arg("pattern"));

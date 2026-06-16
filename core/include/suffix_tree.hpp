@@ -30,6 +30,10 @@ public:
     // Returns the sequence of edge-label substrings traversed when matching pattern.
     std::vector<std::string> get_tree_path(const std::string& pattern) const;
 
+    // Walk from root matching query[start:] as far as possible.
+    // Returns {matched_length, suffix_index_of_one_occurrence}, or {0,-1} if no match.
+    std::pair<int,int> longest_match(const std::string& query, int start) const;
+
 private:
     std::string text_;
     int global_end_ = -1;

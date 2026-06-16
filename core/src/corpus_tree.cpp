@@ -40,6 +40,21 @@ std::string source_for_pos(const std::vector<std::pair<int,std::string>>& offset
     return offsets[res].second;
 }
 
+std::vector<CorpusTree::MatchResult> CorpusTree::matching_statistics(
+    const std::string& suspect, int min_match_len) const
+{
+    std::vector<MatchResult> results;
+    if (!impl_) return results;
+
+    const int n = static_cast<int>(suspect.size());
+    for (int i = 0; i < n; i++) {
+        auto [len, pos] = impl_->tree.longest_match(suspect, i);
+        if (len >= min_match_len && pos >= 0)
+            results.push_back({i, len, source_for_pos(impl_->offsets, pos)});
+    }
+    return results;
+}
+
 bool CorpusTree::contains(const std::string& pattern) const {
     if (!impl_) return false;
     return impl_->tree.contains(pattern);

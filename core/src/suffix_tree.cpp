@@ -170,6 +170,53 @@ std::vector<std::string> SuffixTree::get_tree_path(const std::string& pattern) c
     return path;
 }
 
+std::pair<int,int> SuffixTree::longest_match(const std::string& query, int start) const {
+    if (!root_ || start >= (int)query.size()) return {0, -1};
+
+    Node* cur = root_;
+    int matched = 0;
+
+    while (true) {
+        int qi = start + matched;
+        if (qi >= (int)query.size()) break;
+
+        auto it = cur->children.find(query[qi]);
+        if (it == cur->children.end()) break;
+
+        Node* child = it->second;
+        int edge_len = *child->end - child->start + 1;
+        int ei = 0;
+
+        while (ei < edge_len && qi + ei < (int)query.size()) {
+            if (text_[child->start + ei] != query[qi + ei]) {
+                matched += ei;
+                std::vector<int> tmp;
+                collect_leaves(child, tmp);
+                return {matched, tmp.empty() ? -1 : tmp[0]};
+            }
+            ei++;
+        }
+
+        matched += ei;
+
+        if (qi + ei >= (int)query.size()) {
+            // query exhausted mid-edge or exactly at edge end
+            std::vector<int> tmp;
+            collect_leaves(child, tmp);
+            return {matched, tmp.empty() ? -1 : tmp[0]};
+        }
+
+        cur = child; // consumed full edge, descend
+    }
+
+    if (matched > 0) {
+        std::vector<int> tmp;
+        collect_leaves(cur, tmp);
+        return {matched, tmp.empty() ? -1 : tmp[0]};
+    }
+    return {0, -1};
+}
+
 Node* SuffixTree::find_node(const std::string& pattern, int& edge_offset) const {
     Node* cur = root_;
     int pi = 0;
