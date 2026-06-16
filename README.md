@@ -5,7 +5,7 @@ Proyecto de Algoritmos y Estructuras de datos.
 - **Ctrl+F indexado:** busqueda de patrones O(m) sobre un documento via suffix tree.
 - **Deteccion de plagio:** compara un documento sospechoso contra un corpus usando *matching statistics* sobre un suffix tree generalizado.
 
-Stack: nucleo en C++ expuesto a Python con pybind11 → FastAPI → Vite + React.
+Stack: nucleo en C++ expuesto a Python con pybind11 → FastAPI.
 
 ---
 
@@ -189,10 +189,6 @@ uv run python build.py
 cd backend && uv run uvicorn main:app
 # http://localhost:8000
 
-# 3. Levantar el frontend
-cd frontend && pnpm install && pnpm dev
-# http://localhost:5173
-
-# 4. Correr todos los tests (C++ + Python)
+# 3. Correr todos los tests (C++ + Python)
 uv run python test.py
 ```
