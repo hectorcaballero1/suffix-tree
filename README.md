@@ -47,10 +47,12 @@ stc.naive_search(text, pattern)       # list[int]
 backend/data/
 ├── search_doc/     # 1 archivo — el documento sobre el que se hace Ctrl+F y deteccion
 ├── corpus/         # N archivos — referencias contra las que se detecta plagio
-└── benchmark/      # exactamente: benchmark_100k.txt, benchmark_500k.txt, benchmark_1M.txt
+└── benchmark/      # archivos de texto para el benchmark (cualquier nombre, cualquier cantidad)
 ```
 
 Los archivos entran por los endpoints (PDF o TXT). Python extrae el texto, lo normaliza y lo guarda en la carpeta correspondiente. Si una carpeta esta vacia cuando se necesita, el endpoint retorna error.
+
+Cualquier archivo PDF o TXT en esa carpeta aparece automaticamente en el benchmark. Se pueden subir desde la pestaña Benchmark del frontend.
 
 ---
 
@@ -163,27 +165,6 @@ Error: `benchmark_file_missing` si algun archivo no existe.
 
 ---
 
-## Frontend
-
-SPA con tres pestañas construida con **Vite + vanilla JS** (sin framework). El frontend es un repositorio independiente.
-
-| Pestaña | Funcionalidad |
-|---|---|
-| **Ctrl+F** | Subir PDF/TXT → cargar en suffix tree → buscar patrón → resalta ocurrencias + muestra ruta en el árbol |
-| **Plagio** | Subir corpus → construir árbol generalizado → detectar plagio → spans coloreados por fuente con porcentajes |
-| **Benchmark** | Ejecuta benchmark sobre 3 tamaños (100k, 500k, 1M) → tabla comparativa + gráfico de barras |
-
-Inicialización:
-
-```bash
-cd frontend
-pnpm install        # primera vez
-pnpm dev            # http://localhost:5173
-pnpm build          # produccion → dist/
-```
-
-El proxy de Vite redirige `/corpus`, `/document`, `/detect`, `/benchmark` y `/health` al backend.
-
 ---
 
 ## Decisiones tecnicas
@@ -206,16 +187,12 @@ El proxy de Vite redirige `/corpus`, `/document`, `/detect`, `/benchmark` y `/he
 
 ```bash
 # 1. Compilar el nucleo C++
-uv run python build.py
+uv run build.py
 
 # 2. Iniciar backend
 cd backend && uv run uvicorn main:app
 # http://localhost:8000
 
-# 3. Iniciar frontend (otra terminal)
-cd frontend && pnpm dev
-# http://localhost:5173
-
-# 4. Correr todos los tests (C++ + Python)
-uv run python test.py
+# 3. Correr todos los tests (C++ + Python)
+uv run test.py
 ```
