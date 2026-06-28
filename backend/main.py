@@ -92,6 +92,7 @@ class BenchmarkRequest(BaseModel):
 
 class BenchmarkResult(BaseModel):
     size: int
+    word_count: int
     file: str
     suffix_tree_build_ms: float
     suffix_tree_search_ms: float
@@ -261,6 +262,31 @@ async def detect(req: DetectRequest):
 
 # ── Benchmark ──────────────────────────────────────────────────────────────────
 
+@app.post("/benchmark/upload")
+async def benchmark_upload(files: list[UploadFile] = File(...)):
+    ensure_dirs()
+    saved = []
+    for f in files:
+        content = await f.read()
+        orig_path = BENCHMARK_DIR / f.filename
+        # Write the original file temporarily to extract its text
+        with open(orig_path, "wb") as out:
+            out.write(content)
+        try:
+            text = extract_text(orig_path)
+        finally:
+            orig_path.unlink(missing_ok=True)
+        stem = Path(f.filename).stem
+        txt_path = BENCHMARK_DIR / f"{stem}.txt"
+        txt_path.write_text(text, encoding="utf-8")
+        saved.append({
+            "filename": txt_path.name,
+            "char_count": len(text),
+            "word_count": len(text.split()),
+        })
+    return {"saved": saved}
+
+
 @app.post("/benchmark")
 async def benchmark(req: BenchmarkRequest):
     ensure_dirs()
@@ -294,6 +320,7 @@ async def benchmark(req: BenchmarkRequest):
 
         results.append(BenchmarkResult(
             size=size,
+            word_count=len(text.split()),
             file=fname,
             suffix_tree_build_ms=round(build_ms, 4),
             suffix_tree_search_ms=round(search_ms, 6),
