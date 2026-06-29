@@ -23,5 +23,9 @@ backend/data/benchmark/*
 .DS_Store
 .pytest_cache/
 
+# clangd / editor
+compile_commands.json
+.cache/
+
 # Keep benchmark data (generated)
 backend/data/benchmark/*.txt

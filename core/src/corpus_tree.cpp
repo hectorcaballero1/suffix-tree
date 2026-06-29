@@ -1,9 +1,10 @@
 #include "corpus_tree.hpp"
 #include "suffix_tree.hpp"
-#include <algorithm>
 #include <stdexcept>
 
-static constexpr int MAX_CORPUS_DOCS = 254; // separators \x01..\xFE
+// Separators use high bytes 0x80..0xFF. Normalization keeps only ASCII (<= 0x7F),
+// so these bytes never appear in document text and can't collide with it.
+static constexpr int MAX_CORPUS_DOCS = 128; // separators \x80..\xFF
 
 struct CorpusTree::Impl {
     SuffixTree tree;
@@ -15,12 +16,12 @@ CorpusTree::~CorpusTree() { delete impl_; }
 
 void CorpusTree::build(const std::vector<std::pair<std::string,std::string>>& docs) {
     if (docs.size() > static_cast<size_t>(MAX_CORPUS_DOCS))
-        throw std::runtime_error("Too many corpus documents (max 254)");
+        throw std::runtime_error("Too many corpus documents (max 128)");
 
     delete impl_;
     impl_ = new Impl();
 
-    char sep = '\x01';
+    char sep = '\x80'; // first high-byte separator (outside the ASCII alphabet)
     for (const auto& [text, name] : docs) {
         impl_->offsets.push_back({static_cast<int>(impl_->concat.size()), name});
         impl_->concat += text;
@@ -64,9 +65,8 @@ std::vector<Occurrence> CorpusTree::find_occurrences(const std::string& pattern)
     std::vector<Occurrence> result;
     if (!impl_) return result;
     for (int pos : impl_->tree.find_occurrences(pattern)) {
-        // Skip occurrences that start inside a separator byte
-        char c = impl_->concat[pos];
-        if (c >= '\x01' && c <= '\xFE') continue;
+        // No separator filtering needed: separators are high bytes (>= 0x80) and
+        // a normalized (ASCII) pattern can never match one.
         result.push_back({pos, source_for_pos(impl_->offsets, pos)});
     }
     return result;

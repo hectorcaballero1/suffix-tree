@@ -8,46 +8,45 @@
 #include "suffix_tree.hpp"
 #include "corpus_tree.hpp"
 
-// ── Helpers ──────────────────────────────────────────────────────────────────
-
+// Helpers
 static std::vector<int> sorted(std::vector<int> v) {
     std::sort(v.begin(), v.end());
     return v;
 }
 
-#define CHECK_EQ(a, b, label)                                          \
-    do {                                                               \
-        auto _a = sorted(a); auto _b = sorted(b);                     \
-        if (_a != _b) {                                                \
-            std::cerr << "[FAIL] " << (label) << "\n";                \
-            std::cerr << "  expected: "; for (int x:_b) std::cerr<<x<<" "; std::cerr<<"\n"; \
-            std::cerr << "  got:      "; for (int x:_a) std::cerr<<x<<" "; std::cerr<<"\n"; \
-            return false;                                              \
-        }                                                              \
-        std::cout << "[OK]   " << (label) << "\n";                    \
-    } while(0)
-
-// ── Group 1: NaiveSearch ─────────────────────────────────────────────────────
-
-static bool test_naive() {
-    std::cout << "\n=== GROUP 1: NaiveSearch (oracle) ===\n";
-
-    CHECK_EQ(naive_search("abcde", "bc"),    (std::vector<int>{1}),       "single occurrence");
-    CHECK_EQ(naive_search("abcde", "xyz"),   (std::vector<int>{}),        "pattern absent");
-    CHECK_EQ(naive_search("aaaa",  "a"),     (std::vector<int>{0,1,2,3}), "all same - single char");
-    CHECK_EQ(naive_search("aaaa",  "aa"),    (std::vector<int>{0,1,2}),   "all same - overlapping");
-    CHECK_EQ(naive_search("abcde", "abcde"), (std::vector<int>{0}),       "pattern equals text");
-    CHECK_EQ(naive_search("xyzabc","abc"),   (std::vector<int>{3}),       "pattern at end");
-    CHECK_EQ(naive_search("ababab","aba"),   (std::vector<int>{0,2}),     "overlapping occurrences");
-    CHECK_EQ(naive_search("a",     "a"),     (std::vector<int>{0}),       "single char text");
-    CHECK_EQ(naive_search("abcde", ""),      (std::vector<int>{}),        "empty pattern");
+static bool check_eq(std::vector<int> a, std::vector<int> b, const std::string& label) {
+    a = sorted(a); b = sorted(b);
+    if (a != b) {
+        std::cerr << "[FAIL] " << label << "\n";
+        std::cerr << "  expected: "; for (int x : b) std::cerr << x << " "; std::cerr << "\n";
+        std::cerr << "  got:      "; for (int x : a) std::cerr << x << " "; std::cerr << "\n";
+        return false;
+    }
+    std::cout << "[OK]   " << label << "\n";
     return true;
 }
 
-// ── Group 2: SuffixTree single-doc (vs naive oracle) ─────────────────────────
+// Group 1: NaiveSearch
 
+static bool test_naive() {
+    std::cout << "\nGROUP 1: NaiveSearch\n";
+
+    bool ok = true;
+    ok &= check_eq(naive_search("abcde", "bc"),    {1},       "single occurrence");
+    ok &= check_eq(naive_search("abcde", "xyz"),   {},        "pattern absent");
+    ok &= check_eq(naive_search("aaaa",  "a"),     {0,1,2,3}, "all same - single char");
+    ok &= check_eq(naive_search("aaaa",  "aa"),    {0,1,2},   "all same - overlapping");
+    ok &= check_eq(naive_search("abcde", "abcde"), {0},       "pattern equals text");
+    ok &= check_eq(naive_search("xyzabc","abc"),   {3},       "pattern at end");
+    ok &= check_eq(naive_search("ababab","aba"),   {0,2},     "overlapping occurrences");
+    ok &= check_eq(naive_search("a",     "a"),     {0},       "single char text");
+    ok &= check_eq(naive_search("abcde", ""),      {},        "empty pattern");
+    return ok;
+}
+
+// Group 2: SuffixTree single-doc
 static bool test_ukkonen() {
-    std::cout << "\n=== GROUP 2: SuffixTree single-doc ===\n";
+    std::cout << "\nGROUP 2: SuffixTree single-doc\n";
 
     auto check = [](const std::string& text, const std::string& pattern, const char* label) -> bool {
         SuffixTree t;
@@ -104,10 +103,9 @@ static bool test_ukkonen() {
     return ok;
 }
 
-// ── Group 3: CorpusTree ──────────────────────────────────────────────────────
-
+// Group 3: CorpusTree
 static bool test_corpus() {
-    std::cout << "\n=== GROUP 3: CorpusTree ===\n";
+    std::cout << "\nGROUP 3: CorpusTree\n";
     bool ok = true;
 
     // Shared phrase: "world" appears in both docs
@@ -164,8 +162,7 @@ static bool test_corpus() {
     return ok;
 }
 
-// ── Group 4: MatchingStatistics ───────────────────────────────────────────────
-
+// Group 4: MatchingStatistics
 static bool test_matching_stats() {
     std::cout << "\n=== GROUP 4: MatchingStatistics ===\n";
     bool ok = true;
@@ -230,8 +227,7 @@ static bool test_matching_stats() {
     return ok;
 }
 
-// ── Main ──────────────────────────────────────────────────────────────────────
-
+// Main
 int main() {
     bool all_ok = true;
     all_ok &= test_naive();

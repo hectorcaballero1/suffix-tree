@@ -9,8 +9,10 @@ struct Occurrence {
 };
 
 // Generalized suffix tree for a corpus of documents.
-// Documents are concatenated with unique single-byte separators \x01, \x02, ...
-// Limit: 254 documents max (\x01..\xFE). Documented here so callers can enforce it.
+// Documents are concatenated with unique single-byte separators \x80, \x81, ...
+// High bytes (>= 0x80) are used because normalized text is ASCII only, so they
+// never collide with document content.
+// Limit: 128 documents max (\x80..\xFF). Documented here so callers can enforce it.
 class CorpusTree {
 public:
     CorpusTree() = default;

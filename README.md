@@ -56,7 +56,7 @@ Construye el `CorpusTree` generalizado en memoria con todo lo que haya en `data/
 
 Response: `{ "sources": ["ref1.txt"], "total_chars": 142300, "build_time_ms": 87.4 }`
 
-Errores: `corpus_dir_empty`, `corpus_too_large` (> 2M chars), `too_many_documents` (> 254).
+Errores: `corpus_dir_empty`, `corpus_too_large` (> 10M chars), `too_many_documents` (> 128).
 
 ### `POST /detect`
 Corre matching statistics del documento cargado contra el corpus. Devuelve spans en texto original.
@@ -90,7 +90,7 @@ Response: `{ "results": [{ "file", "size", "word_count", "suffix_tree_build_ms",
 
 **Terminal `\x00`:** se agrega al final del texto antes de construir el arbol para garantizar que todos los sufijos terminen en hojas distintas. Sin el, sufijos que son prefijos de otros podrian "perderse" dentro del arbol.
 
-**CorpusTree con separadores `\x01`–`\xFE`:** en lugar de construir N arboles separados para el corpus, se concatenan todos los documentos con un byte separador unico por documento y se construye un solo arbol. Permite buscar un patron en todos los documentos a la vez en O(m). Limite de 254 documentos porque solo hay 254 valores de separador disponibles.
+**CorpusTree con separadores `\x80`–`\xFF`:** en lugar de construir N arboles separados para el corpus, se concatenan todos los documentos con un byte separador unico por documento y se construye un solo arbol. Permite buscar un patron en todos los documentos a la vez en O(m). Se usan bytes altos (>= `\x80`) como separadores porque el texto normalizado es ASCII puro (<= `\x7F`), asi nunca colisionan con el contenido de los documentos. Limite de 128 documentos (`\x80`–`\xFF`); para mas, se usarian separadores multi-byte.
 
 **Matching statistics:** para cada posicion `i` del texto sospechoso se baja desde la raiz del CorpusTree midiendo cuantos caracteres consecutivos aparecen en el corpus. Posiciones donde esa longitud supera `min_match_length` son candidatas a plagio. Python fusiona posiciones adyacentes del mismo source en spans y los traduce a coordenadas del texto original.
 

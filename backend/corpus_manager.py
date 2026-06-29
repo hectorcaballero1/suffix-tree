@@ -7,8 +7,8 @@ import suffix_tree_core as stc
 from text_utils import normalize_text, offset_map_from_original
 
 
-MAX_CORPUS_CHARS = 2_000_000
-MAX_CORPUS_DOCS = 254
+MAX_CORPUS_CHARS = 10_000_000  # safety cap (RAM); algorithm itself handles up to ~INT_MAX chars
+MAX_CORPUS_DOCS = 128  # C++ core uses high-byte separators \x80..\xFF (128 max)
 
 
 class DocState:

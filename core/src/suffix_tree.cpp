@@ -1,8 +1,4 @@
 #include "suffix_tree.hpp"
-#include <cassert>
-#include <stdexcept>
-
-// ── Lifecycle ─────────────────────────────────────────────────────────────────
 
 SuffixTree::~SuffixTree() {
     if (root_) destroy(root_);
@@ -21,21 +17,20 @@ Node* SuffixTree::new_node(int start, int* end) {
     return new Node(start, end);
 }
 
-// ── Build (Ukkonen) ───────────────────────────────────────────────────────────
-
+// Build (Ukkonen)
 void SuffixTree::build(const std::string& text) {
     text_ = text + '\0'; // terminal character outside the normalized alphabet
     global_end_ = -1;
 
     if (root_) destroy(root_);
     // Root: dummy edge [-1, -1], leaf logic skips edge_length for root
-    root_         = new_node(-1, new int(-1));
+    root_ = new_node(-1, new int(-1));
     root_->suffix_link = root_;
 
-    active_node_  = root_;
-    active_edge_  = 0;
-    active_len_   = 0;
-    remaining_    = 0;
+    active_node_ = root_;
+    active_edge_ = 0;
+    active_len_ = 0;
+    remaining_ = 0;
     last_new_internal_ = nullptr;
 
     for (int i = 0; i < static_cast<int>(text_.size()); ++i)
@@ -70,7 +65,7 @@ void SuffixTree::extend(int phase) {
             int edge_len = *nxt->end - nxt->start + 1;
             if (active_len_ >= edge_len) {
                 active_edge_ += edge_len;
-                active_len_  -= edge_len;
+                active_len_ -= edge_len;
                 active_node_  = nxt;
                 continue; // retry with new active point
             }
@@ -114,8 +109,7 @@ void SuffixTree::extend(int phase) {
     }
 }
 
-// ── DFS helpers ───────────────────────────────────────────────────────────────
-
+// DFS helpers
 void SuffixTree::collect_leaves(Node* n, std::vector<int>& out) const {
     if (n->children.empty()) {
         if (n->suffix_index >= 0)
@@ -126,8 +120,7 @@ void SuffixTree::collect_leaves(Node* n, std::vector<int>& out) const {
         collect_leaves(child, out);
 }
 
-// ── Search ───────────────────────────────────────────────────────────────────
-
+// Search
 bool SuffixTree::contains(const std::string& pattern) const {
     if (!root_ || pattern.empty()) return false;
     int dummy = 0;
