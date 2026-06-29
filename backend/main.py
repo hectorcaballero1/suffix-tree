@@ -1,23 +1,26 @@
 import os
+import sys
 import time
-import shutil
-from pathlib import Path
 from contextlib import asynccontextmanager
+from pathlib import Path
 
-from fastapi import FastAPI, UploadFile, File, Form, HTTPException
+from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
 
+import suffix_tree_core as stc  # type: ignore (built by build.py)
+from corpus_manager import corpus_state, doc_state
 from text_utils import (
-    extract_text, normalize_text, ensure_dirs,
-    SEARCH_DIR, CORPUS_DIR, BENCHMARK_DIR,
+    BENCHMARK_DIR,
+    CORPUS_DIR,
+    SEARCH_DIR,
+    ensure_dirs,
+    extract_text,
+    normalize_text,
 )
-from corpus_manager import doc_state, corpus_state, MAX_CORPUS_DOCS
-import suffix_tree_core as stc
 
 
 @asynccontextmanager
@@ -38,18 +41,22 @@ app.add_middleware(
 
 # ── Schemas ────────────────────────────────────────────────────────────────────
 
+
 class UploadResponse(BaseModel):
     saved: list[str]
     total_chars: int
+
 
 class BuildResponse(BaseModel):
     sources: list[str]
     total_chars: int
     build_time_ms: float
 
+
 class DocUploadResponse(BaseModel):
     filename: str
     char_count: int
+
 
 class DocLoadResponse(BaseModel):
     filename: str
@@ -57,12 +64,15 @@ class DocLoadResponse(BaseModel):
     char_count: int
     build_time_ms: float
 
+
 class SearchRequest(BaseModel):
     pattern: str
+
 
 class OccurrenceItem(BaseModel):
     position: int
     original_position: int
+
 
 class SearchResponse(BaseModel):
     occurrences: list[int]
@@ -71,8 +81,10 @@ class SearchResponse(BaseModel):
     tree_path: list[str]
     search_time_ms: float
 
+
 class DetectRequest(BaseModel):
     min_match_length: int = 40
+
 
 class SpanItem(BaseModel):
     start: int
@@ -82,13 +94,16 @@ class SpanItem(BaseModel):
     original_start: int
     original_end: int
 
+
 class DetectResponse(BaseModel):
     spans: list[SpanItem]
     global_pct: float
     by_source: dict[str, float]
 
+
 class BenchmarkRequest(BaseModel):
     pattern: str = "the"
+
 
 class BenchmarkResult(BaseModel):
     size: int
@@ -99,8 +114,10 @@ class BenchmarkResult(BaseModel):
     naive_search_ms: float
     occurrences: int
 
+
 class BenchmarkResponse(BaseModel):
     results: list[BenchmarkResult]
+
 
 class ErrorResponse(BaseModel):
     error: str
@@ -108,17 +125,21 @@ class ErrorResponse(BaseModel):
 
 # ── Corpus endpoints ───────────────────────────────────────────────────────────
 
+
 @app.post("/corpus/upload")
 async def corpus_upload(files: list[UploadFile] = File(...)):
     ensure_dirs()
     saved = []
     total_chars = 0
     for f in files:
+        fname = f.filename
+        if not fname:
+            continue
         content = await f.read()
-        fpath = CORPUS_DIR / f.filename
+        fpath = CORPUS_DIR / fname
         with open(fpath, "wb") as out:
             out.write(content)
-        saved.append(f.filename)
+        saved.append(fname)
         try:
             text = extract_text(fpath)
             total_chars += len(text)
@@ -143,24 +164,30 @@ async def corpus_build():
 
 # ── Document endpoints ─────────────────────────────────────────────────────────
 
+
 @app.post("/document/upload")
 async def document_upload(file: UploadFile = File(...)):
     ensure_dirs()
+    fname = file.filename
+    if not fname:
+        raise HTTPException(status_code=400, detail="missing_filename")
     for old in SEARCH_DIR.iterdir():
         if old.is_file() and not old.name.startswith("."):
             old.unlink()
     content = await file.read()
-    fpath = SEARCH_DIR / file.filename
+    fpath = SEARCH_DIR / fname
     with open(fpath, "wb") as out:
         out.write(content)
     text = extract_text(fpath)
-    return DocUploadResponse(filename=file.filename, char_count=len(text))
+    return DocUploadResponse(filename=fname, char_count=len(text))
 
 
 @app.post("/document/load")
 async def document_load():
     ensure_dirs()
-    files = [f for f in SEARCH_DIR.iterdir() if f.is_file() and not f.name.startswith(".")]
+    files = [
+        f for f in SEARCH_DIR.iterdir() if f.is_file() and not f.name.startswith(".")
+    ]
     if not files:
         raise HTTPException(status_code=400, detail="search_doc_missing")
     if len(files) > 1:
@@ -199,6 +226,7 @@ async def document_search(req: SearchRequest):
 
 # ── Plagiarism detection ───────────────────────────────────────────────────────
 
+
 def merge_spans(results, doc_norm_text, min_gap=5):
     if not results:
         return []
@@ -226,11 +254,9 @@ async def detect(req: DetectRequest):
     if not doc_state.normalized_text:
         raise HTTPException(status_code=400, detail="no_document")
 
-    t0 = time.perf_counter()
     results = corpus_state.tree.matching_statistics(
         doc_state.normalized_text, req.min_match_length
     )
-    search_time = (time.perf_counter() - t0) * 1000
 
     merged = merge_spans(results, doc_state.normalized_text)
     norm_len = len(doc_state.normalized_text)
@@ -243,15 +269,19 @@ async def detect(req: DetectRequest):
         by_source[src] = by_source.get(src, 0) + span_len
         orig_start = doc_state.translate_position(start)
         orig_end = doc_state.translate_position(min(end, norm_len - 1)) + 1
-        span_items.append(SpanItem(
-            start=start, end=end, source=src, length=span_len,
-            original_start=orig_start, original_end=orig_end,
-        ))
+        span_items.append(
+            SpanItem(
+                start=start,
+                end=end,
+                source=src,
+                length=span_len,
+                original_start=orig_start,
+                original_end=orig_end,
+            )
+        )
 
     global_pct = (total_matched / norm_len * 100) if norm_len > 0 else 0.0
-    by_source_pct = {
-        src: (count / norm_len * 100) for src, count in by_source.items()
-    }
+    by_source_pct = {src: (count / norm_len * 100) for src, count in by_source.items()}
 
     return DetectResponse(
         spans=span_items,
@@ -262,13 +292,17 @@ async def detect(req: DetectRequest):
 
 # ── Benchmark ──────────────────────────────────────────────────────────────────
 
+
 @app.post("/benchmark/upload")
 async def benchmark_upload(files: list[UploadFile] = File(...)):
     ensure_dirs()
     saved = []
     for f in files:
+        fname = f.filename
+        if not fname:
+            continue
         content = await f.read()
-        orig_path = BENCHMARK_DIR / f.filename
+        orig_path = BENCHMARK_DIR / fname
         # Write the original file temporarily to extract its text
         with open(orig_path, "wb") as out:
             out.write(content)
@@ -276,14 +310,16 @@ async def benchmark_upload(files: list[UploadFile] = File(...)):
             text = extract_text(orig_path)
         finally:
             orig_path.unlink(missing_ok=True)
-        stem = Path(f.filename).stem
+        stem = Path(fname).stem
         txt_path = BENCHMARK_DIR / f"{stem}.txt"
         txt_path.write_text(text, encoding="utf-8")
-        saved.append({
-            "filename": txt_path.name,
-            "char_count": len(text),
-            "word_count": len(text.split()),
-        })
+        saved.append(
+            {
+                "filename": txt_path.name,
+                "char_count": len(text),
+                "word_count": len(text.split()),
+            }
+        )
     return {"saved": saved}
 
 
@@ -291,7 +327,11 @@ async def benchmark_upload(files: list[UploadFile] = File(...)):
 async def benchmark(req: BenchmarkRequest):
     ensure_dirs()
     benchmark_files = sorted(
-        [f for f in BENCHMARK_DIR.iterdir() if f.is_file() and not f.name.startswith(".")],
+        [
+            f
+            for f in BENCHMARK_DIR.iterdir()
+            if f.is_file() and not f.name.startswith(".")
+        ],
         key=lambda p: p.stat().st_size,
     )
     if not benchmark_files:
@@ -315,23 +355,26 @@ async def benchmark(req: BenchmarkRequest):
         search_ms = (time.perf_counter() - t0) * 1000
 
         t0 = time.perf_counter()
-        naive_occ = stc.naive_search(text, pattern)
+        stc.naive_search(text, pattern)  # timed for comparison; result unused
         naive_ms = (time.perf_counter() - t0) * 1000
 
-        results.append(BenchmarkResult(
-            size=size,
-            word_count=len(text.split()),
-            file=fname,
-            suffix_tree_build_ms=round(build_ms, 4),
-            suffix_tree_search_ms=round(search_ms, 6),
-            naive_search_ms=round(naive_ms, 4),
-            occurrences=len(occ),
-        ))
+        results.append(
+            BenchmarkResult(
+                size=size,
+                word_count=len(text.split()),
+                file=fname,
+                suffix_tree_build_ms=round(build_ms, 4),
+                suffix_tree_search_ms=round(search_ms, 6),
+                naive_search_ms=round(naive_ms, 4),
+                occurrences=len(occ),
+            )
+        )
 
     return BenchmarkResponse(results=results)
 
 
 # ── Health ─────────────────────────────────────────────────────────────────────
+
 
 @app.get("/health")
 async def health():

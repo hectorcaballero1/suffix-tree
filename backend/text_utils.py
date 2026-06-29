@@ -48,7 +48,7 @@ def offset_map_from_original(original: str, normalized: str) -> list[int]:
 def extract_text_from_pdf(path: str | Path) -> str:
     import fitz
     doc = fitz.open(str(path))
-    text = "".join(page.get_text() for page in doc)
+    text = "".join(str(page.get_text("text")) for page in doc)
     doc.close()
     return text
 
