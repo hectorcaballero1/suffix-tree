@@ -50,7 +50,7 @@ void SuffixTree::extend(int phase) {
         auto it = active_node_->children.find(ae_char);
 
         if (it == active_node_->children.end()) {
-            // Rule 2: no edge starts with this char — create a new leaf.
+            // Rule 2: no edge starts with this char —> create a new leaf.
             // Suffix index: current phase minus how many suffixes are still pending.
             Node* leaf = new_node(phase, &global_end_);
             leaf->suffix_index = phase - remaining_ + 1;
@@ -75,7 +75,7 @@ void SuffixTree::extend(int phase) {
                 ++active_len_;
                 if (last_new_internal_)
                     last_new_internal_->suffix_link = active_node_;
-                break; // show stopper — all remaining suffixes extend implicitly
+                break; // show stopper (all remaining suffixes extend implicitly)
             }
 
             // Rule 2: split the edge
