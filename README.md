@@ -7,7 +7,7 @@ Busqueda indexada de patrones y deteccion de plagio sobre documentos PDF/TXT. Nu
 ```bash
 uv run build.py                          # compila el modulo C++
 cd backend && uv run uvicorn main:app    # http://localhost:8000
-uv run test.py                           # tests
+
 ```
 
 ---
