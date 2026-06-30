@@ -3,7 +3,6 @@ add_library(suffixtree_core STATIC
     src/naive_search.cpp
     src/suffix_tree.cpp
     src/corpus_tree.cpp
-    src/matching_stats.cpp
 )
 target_include_directories(suffixtree_core PUBLIC include)
 set_target_properties(suffixtree_core PROPERTIES
